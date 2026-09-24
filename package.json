@@ -153,8 +153,7 @@
     "#stream": {
       "node": "./lib/stream/node.js",
       "default": "./lib/stream/browser.js"
-    },
-    "#standard-fonts/*": "./js/standard-fonts/*.cjs"
+    }
   },
   "engine": [
     "node >= v20.0.0"

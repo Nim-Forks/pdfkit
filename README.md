@@ -136,6 +136,41 @@ doc.end();
 complex documents with a very small amount of code. For more, see the `demo` folder and the
 [PDFKit programming guide](http://pdfkit.org/docs/getting_started.html).
 
+## Bundling for Node
+
+The Node build loads the metrics of the 14 standard fonts on first use from
+`standard-fonts/` next to the built file, and PDF/A output reads the sRGB ICC
+profile from `data/` next to it. Both are resolved relative to the built file
+inside pdfkit's package directory, which a bundle that inlines pdfkit (esbuild,
+rollup, webpack, the AWS CDK's `NodejsFunction`, ...) does not sit in. Pick one
+of:
+
+- Mark `pdfkit` as external in the bundler and ship `node_modules/pdfkit` next
+  to the bundle. File tracers such as `@vercel/nft` pick up every file pdfkit
+  needs.
+- Copy pdfkit's `js/standard-fonts` directory next to an ESM bundle, which then
+  loads the fonts from there. A CommonJS bundle has no `import.meta.url` to
+  resolve against, so this route is not open to it.
+- Register the standard fonts the document uses before creating it, the same
+  way as in the browser:
+
+  ```javascript
+  import { PDFDocument, registerStdFonts } from 'pdfkit';
+  import Helvetica from 'pdfkit/standard-fonts/Helvetica';
+
+  registerStdFonts(Helvetica);
+  const doc = new PDFDocument();
+  ```
+
+  Using a standard font that is neither registered nor loadable throws an
+  error naming the font. Fonts read from the file system or passed as data are
+  not affected.
+
+PDF/A output additionally reads `data/sRGB_IEC61966_2_1.icc` relative to the
+bundle's `import.meta.url`: copy pdfkit's `js/data` directory next to an ESM
+bundle, or register the profile under that URL with `registerFile`. A CommonJS
+bundle has no `import.meta.url` and says so when PDF/A output is requested.
+
 ## Browser Usage
 
 There are three ways to use PDFKit in the browser:
